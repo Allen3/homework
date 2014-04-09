@@ -1,0 +1,6 @@
+#These files are C++ files.
+#
+*.o
+*.exe
+~
+*.cbp
