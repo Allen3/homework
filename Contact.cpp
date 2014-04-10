@@ -13,7 +13,9 @@ using namespace std;
 #define OUTPUT_FILE_AUTO    "ContactList_autosave.txt"
 #define CCT                 (+8)
 #define ORIGIN_YEAR         (1900)
-
+#define EMPTY_ADDRESS       "No address information"
+/***********************ENUM DEFINES***************************/
+enum GENDER {Male , Female};
 /*********************STRUCTS DEFINES**************************/
 struct _date{
     int year , month , day;
@@ -22,6 +24,8 @@ struct _date{
 struct _info{
     char name[20];
     char telnum[20];
+    char address[50];
+    GENDER gender;
     _date birthday;
     _info *next , *last;
 }__attribute__((packed));  //_info
@@ -48,8 +52,10 @@ void Query_Contact_byname();
 void Query_Contact_bytelnum();
 int  getModifyChoice();
 void Modify_Contact_name(int );
+void Modify_Contact_gender(int );
 void Modify_Contact_telnum(int );
 void Modify_Contact_birthday(int );
+void Modify_Contact_address(int );
 
 /*********************FUNCTIONS DEFINES************************/
 void Print_WelcomeInfo(){
@@ -86,18 +92,35 @@ void Print_ErrorInfo(int option){
 
 void Add_NewContact(){
     _info *newNode = new _info;
+    int option;
+    char gender;
 
     ListLength ++;
     printf("\tName: ");
     scanf("%s" , newNode->name);
+
+    printf("\tGender(\'M\' for male , \'F\' for female): ");
+    scanf("%c%c" , &gender , &gender);
+    if (gender == 'M' || gender == 'm')
+        newNode->gender = Male;
+    else
+        newNode->gender = Female;
+
     printf("\tTelephone: ");
     scanf("%s" , newNode->telnum);
+
     printf("\tBirthday(**** ** ** or just type in 0 to skip this): ");
-    int option;
     scanf("%d" , &option);
     if (option != 0){
+        newNode->birthday.year = option;
         scanf("%d%d" , &newNode->birthday.month , &newNode->birthday.day);
-    }   //option != 0
+    }   //  option != 0
+
+    printf("\tAdress(Within 50 characters without *SPACE* or just type in 0 to skip this): ");
+    scanf("%s" , newNode->address);
+    if (strcmp(newNode->address , "0") == 0){
+        memcpy(newNode->address , EMPTY_ADDRESS , sizeof(EMPTY_ADDRESS));
+    }   //  option == 0
     
     if (List){
         newNode->next = NULL;
@@ -143,8 +166,10 @@ void List_ContactInfo(){
         printf("****************************************************************************\n");
         printf("Contact ID:        %d\n" , ID ++);
         printf("Contact Name:      %s\n" , Node->name);
+        printf("Contact Gender:    %s\n" , (Node->gender == Male) ? "Male" : "Female");
         printf("Contact Telephone: %s\n" , Node->telnum);
         printf("Contact Birthday:  %04d--%02d--%02d\n" , Node->birthday.year , Node->birthday.month , Node->birthday.day);
+        printf("Contact Address:   %s\n" , Node->address);
         Node = Node->next;
     }   //while Node
 }   //List_ContactInfo
@@ -165,8 +190,10 @@ void FILE_List_ContactInfo(FILE * stream , tm * GMTtime){
         fprintf(stream , "****************************************************************************\n");
         fprintf(stream , "Contact ID:        %d\n" , ID ++);
         fprintf(stream , "Contact Name:      %s\n" , Node->name);
+        fprintf(stream , "Contact Gender:    %s\n" , (Node->gender == Male) ? "Male" : "Female");
         fprintf(stream , "Contact Telephone: %s\n" , Node->telnum);
         fprintf(stream , "Contact Birthday:  %04d--%02d--%02d\n" , Node->birthday.year , Node->birthday.month , Node->birthday.day);
+        fprintf(stream , "Contact Address:   %s\n" , Node->address);
         Node = Node->next;
     }   //while Node
 }   //FILE_List_ContactInfo
@@ -378,8 +405,10 @@ int getModifyChoice(int *TargetID_add){
     scanf("%d" , TargetID_add);
     printf("\t\tHere are the commands you can type in (just type in the entry number)\n\n");
     printf("\t\t1. Modify the contact's name.\n");
-    printf("\t\t2. Modify the contact's telephone number.\n");
-    printf("\t\t3. Modify the contact's birthday date.\n");
+    printf("\t\t2. Modify the contact's gender.\n");
+    printf("\t\t3. Modify the contact's telephone number.\n");
+    printf("\t\t4. Modify the contact's birthday date.\n");
+    printf("\t\t5. Modify the contact's address.\n");
     printf("Command: ") ;
     scanf("%d" , &command);
     return command;
@@ -401,6 +430,26 @@ void Modify_Contact_name(int TargetID){
         Node = Node->next;
     }   //while Node
 }   //Modify_Contact_name
+
+void Modify_Contact_gender(int TargetID){
+    int ID = 1;
+    char gender;
+    _info *Node = List;
+    printf("\t\tThe new gender(\'M\' for male , \'F\' for female): ");
+    scanf("%c%c" , &gender , &gender);
+    
+    while (Node){
+        if (ID == TargetID){
+            if (gender == 'M' || gender == 'm')
+                Node->gender = Male;
+            else
+                Node->gender = Female;
+            break;
+        }
+        ID ++;
+        Node = Node->next;
+    }   //while Node 
+}   //Modify_Contact_gender
 
 void Modify_Contact_telnum(int TargetID){
     int ID = 1;
@@ -436,6 +485,25 @@ void Modify_Contact_birthday(int TargetID){
         Node = Node->next;
     }   //while Node
 }   //Modify_Contact_birthday
+
+void Modify_Contact_address(int TargetID){
+    int ID = 1;
+    char address[50];
+    _info *Node = List;
+    
+    printf("\tAdress(Within 50 characters without *SPACE*): ");
+    scanf("%s" , address);
+
+    while (Node){
+        if (ID == TargetID){
+            memcpy(Node->address , address , sizeof(char) * 50);
+            break;
+        }   //  Find the target
+        ID ++;
+        Node = Node->next;
+    }   //while Node
+
+}   //Modify_Contact_address
 
 int main(){
     Print_WelcomeInfo();
@@ -490,9 +558,13 @@ int main(){
             else if (option == 1)
                 Modify_Contact_name(TargetID);
             else if (option == 2)
-                Modify_Contact_telnum(TargetID);
+                Modify_Contact_gender(TargetID);
             else if (option == 3)
+                Modify_Contact_telnum(TargetID);
+            else if (option == 4)
                 Modify_Contact_birthday(TargetID);
+            else if (option == 5)
+                Modify_Contact_address(TargetID);
             else
                 Print_ErrorInfo(1);
         }   //  Modify
